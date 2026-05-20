@@ -1,0 +1,5 @@
+[ ] finish the other commands
+[ ] Add an issue key summary table
+[ ] Tag classifier (categorize tags)
+[ ] Activity type field
+[ ] Prompt flow
