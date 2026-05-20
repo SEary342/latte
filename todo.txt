@@ -3,3 +3,4 @@
 [ ] Tag classifier (categorize tags)
 [ ] Activity type field
 [ ] Prompt flow
+[ ] Add a reminder system with due dates (stretch) - might legit require going to a SQLite db
