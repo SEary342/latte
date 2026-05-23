@@ -1,14 +1,14 @@
-use crate::{errors::CliError, storage::load_database, ui::tables::render_log_table};
+use crate::{db::entries::list_entries, errors::CliError, ui::tables::render_log_table};
 
 pub fn handle() -> Result<(), CliError> {
-    let db = load_database()?;
+    let entries = list_entries()?;
 
-    if db.entries.is_empty() {
+    if entries.is_empty() {
         println!("No log entries found.");
         return Ok(());
     }
 
-    render_log_table(&db.entries);
+    render_log_table(&entries);
 
     Ok(())
 }

@@ -71,4 +71,7 @@ pub enum Commands {
         #[arg(long)]
         end_date: Option<String>,
     },
+
+    /// Show the path to the database file
+    Path,
 }

@@ -1,5 +1,14 @@
 use crate::{
-    errors::CliError, models::LogEntry, storage::add_entry, ui::prompts::prompt_for_message,
+    db::{
+        entries::add_entry,
+        metadata::{list_projects, list_tags},
+        tasks::get_task_description,
+    },
+    errors::CliError,
+    models::LogEntry,
+    ui::prompts::{
+        prompt_for_message, prompt_for_multi_value, prompt_for_task_description, prompt_for_time,
+    },
 };
 
 pub fn handle(
@@ -7,23 +16,64 @@ pub fn handle(
     message: Option<String>,
     tags: Vec<String>,
     projects: Vec<String>,
-    start: Option<u32>,
-    end: Option<u32>,
+    start_time: Option<u32>,
+    end_time: Option<u32>,
 ) -> Result<(), CliError> {
+    let task_description = match get_task_description(&task_key)? {
+        Some(desc) => desc,
+
+        None => prompt_for_task_description(&task_key)?,
+    };
+
     let message = match message {
         Some(msg) => Some(msg),
+
         None => {
             let input = prompt_for_message()?;
 
             if input.is_empty() { None } else { Some(input) }
         }
     };
-    let entry = LogEntry::new(task_key, message, tags, projects, start, end);
 
-    add_entry(entry.clone())?;
+    let tags = if tags.is_empty() {
+        prompt_for_multi_value("Tags (comma separated)", list_tags()?)?
+    } else {
+        tags
+    };
 
-    println!("Created log entry:");
-    println!("{:#?}", entry);
+    let projects = if projects.is_empty() {
+        prompt_for_multi_value("Projects (comma separated)", list_projects()?)?
+    } else {
+        projects
+    };
+
+    let start_time = match start_time {
+        Some(time) => Some(time),
+
+        None => prompt_for_time("Start Time (HHMM)")?,
+    };
+
+    let end_time = match end_time {
+        Some(time) => Some(time),
+
+        None => prompt_for_time("End Time (HHMM)")?,
+    };
+
+    let entry = LogEntry::new(
+        task_key,
+        task_description,
+        message,
+        tags,
+        projects,
+        start_time,
+        end_time,
+    );
+
+    let entry_id = entry.id;
+
+    add_entry(entry)?;
+
+    println!("Created log entry: {}", &entry_id.to_string()[..8]);
 
     Ok(())
 }

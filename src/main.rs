@@ -2,9 +2,10 @@ use clap::Parser;
 
 mod cli;
 mod commands;
+mod config;
+mod db;
 mod errors;
 mod models;
-mod storage;
 mod ui;
 
 use crate::{
@@ -49,6 +50,10 @@ fn run(args: Args) -> Result<(), CliError> {
             end_date,
         } => {
             // TODO
+        }
+
+        Commands::Path => {
+            println!("{}", config::show_paths()?);
         }
     }
 

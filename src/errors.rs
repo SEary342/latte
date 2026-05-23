@@ -6,7 +6,10 @@ pub enum CliError {
     Io(#[from] std::io::Error),
 
     #[error("Could not parse integer: {0}")]
-    Parse(#[from] std::num::ParseIntError),
+    ParseInt(#[from] std::num::ParseIntError),
+
+    #[error("Could not parse timestamp: {0}")]
+    ChronoParse(#[from] chrono::ParseError),
 
     #[error("JSON serialization error: {0}")]
     Json(#[from] serde_json::Error),
@@ -14,12 +17,15 @@ pub enum CliError {
     #[error("Dialog error: {0}")]
     Dialog(#[from] dialoguer::Error),
 
+    #[error("Database error: {0}")]
+    Sqlite(#[from] rusqlite::Error),
+
+    #[error("UUID parsing error: {0}")]
+    Uuid(#[from] uuid::Error),
+
     #[error("Could not determine home/config directory")]
     MissingHomeDir,
 
-    #[error("Invalid path: {path}")]
-    InvalidPath { path: std::path::PathBuf },
-
     #[error("{0}")]
-    Storage(String),
+    Message(String),
 }

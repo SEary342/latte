@@ -1,4 +1,5 @@
 use crate::models::LogEntry;
+
 use tabled::{Table, Tabled};
 
 #[derive(Tabled)]
@@ -19,7 +20,11 @@ pub fn render_log_table(entries: &[LogEntry]) {
         .map(|entry| LogRow {
             id: entry.id.to_string()[..8].to_string(),
 
-            task: entry.task_key.clone(),
+            task: if entry.task_description.is_empty() {
+                entry.task_key.clone()
+            } else {
+                format!("{} ({})", entry.task_key, entry.task_description)
+            },
 
             message: entry.message.clone().unwrap_or_default(),
 
