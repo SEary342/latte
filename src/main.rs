@@ -24,37 +24,29 @@ fn main() {
 
 fn run(args: Args) -> Result<(), CliError> {
     match args.command {
-        Commands::Add {
-            task_key,
-            message,
-            tags,
-            projects,
-            start,
-            end,
-        } => commands::add::handle(task_key, message, tags, projects, start, end)?,
+        Commands::Add(args) => commands::add::handle(args)?,
 
         Commands::List => {
             commands::list::handle()?;
         }
 
-        Commands::Search { tag, project, key } => {
+        Commands::Search(_args) => {
             // TODO
         }
 
-        Commands::Edit { id } => {
+        Commands::Edit(_args) => {
             // TODO
         }
 
-        Commands::Summary {
-            start_date,
-            end_date,
-        } => {
+        Commands::Summary(_args) => {
             // TODO
         }
 
         Commands::Path => {
             println!("{}", config::show_paths()?);
         }
+
+        Commands::Cleanup(args) => commands::cleanup::handle(args)?,
     }
 
     Ok(())

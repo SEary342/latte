@@ -50,6 +50,7 @@ pub fn prompt_for_time(prompt: &str) -> Result<Option<u32>, CliError> {
     let input = Input::<String>::new()
         .with_prompt(prompt)
         .allow_empty(true)
+        .validate_with(validate_time_input)
         .interact_text()?;
 
     let input = input.trim();
@@ -58,22 +59,28 @@ pub fn prompt_for_time(prompt: &str) -> Result<Option<u32>, CliError> {
         return Ok(None);
     }
 
-    let value: u32 = input.parse()?;
-
-    validate_time(value)?;
+    let value: u32 = input.parse().unwrap();
 
     Ok(Some(value))
 }
 
-fn validate_time(value: u32) -> Result<(), CliError> {
+fn validate_time_input(input: &String) -> Result<(), String> {
+    let trimmed = input.trim();
+
+    if trimmed.is_empty() {
+        return Ok(());
+    }
+
+    let value = match trimmed.parse::<u32>() {
+        Ok(v) => v,
+        Err(_) => return Err(format!("Invalid input '{}'. Must be a number.", trimmed)),
+    };
+
     let hours = value / 100;
     let minutes = value % 100;
 
     if hours > 23 || minutes > 59 {
-        return Err(CliError::Message(format!(
-            "Invalid time '{}'. Expected HHMM format.",
-            value
-        )));
+        return Err(format!("Invalid time '{}'. Expected HHMM format.", value));
     }
 
     Ok(())

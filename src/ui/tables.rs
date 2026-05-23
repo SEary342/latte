@@ -9,6 +9,7 @@ struct LogRow {
     message: String,
     tags: String,
     projects: String,
+    activity_types: String,
     time: String,
     created: String,
     updated: String,
@@ -31,6 +32,8 @@ pub fn render_log_table(entries: &[LogEntry]) {
             tags: entry.tags.join(","),
 
             projects: entry.projects.join(","),
+
+            activity_types: entry.activity_types.join(","),
 
             time: entry.formatted_time(),
 

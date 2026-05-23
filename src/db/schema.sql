@@ -1,16 +1,8 @@
-use crate::errors::CliError;
-
-use rusqlite::Connection;
-
-pub fn run_migrations(conn: &Connection) -> Result<(), CliError> {
-    conn.execute_batch(
-        "
-        CREATE TABLE IF NOT EXISTS tasks (
+CREATE TABLE tasks (
             task_key TEXT PRIMARY KEY,
             description TEXT NOT NULL DEFAULT ''
         );
-
-        CREATE TABLE IF NOT EXISTS log_entries (
+CREATE TABLE log_entries (
             id TEXT PRIMARY KEY,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
@@ -22,23 +14,20 @@ pub fn run_migrations(conn: &Connection) -> Result<(), CliError> {
             FOREIGN KEY(task_key)
                 REFERENCES tasks(task_key)
         );
-
-        CREATE TABLE IF NOT EXISTS tags (
+CREATE TABLE tags (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE
         );
-
-        CREATE TABLE IF NOT EXISTS projects (
+CREATE TABLE sqlite_sequence(name,seq);
+CREATE TABLE projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE
         );
-
-        CREATE TABLE IF NOT EXISTS activity_types (
+CREATE TABLE activity_types (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE
         );
-
-        CREATE TABLE IF NOT EXISTS log_entry_tags (
+CREATE TABLE log_entry_tags (
             entry_id TEXT NOT NULL,
             tag_id INTEGER NOT NULL,
 
@@ -52,8 +41,7 @@ pub fn run_migrations(conn: &Connection) -> Result<(), CliError> {
                 REFERENCES tags(id)
                 ON DELETE CASCADE
         );
-
-        CREATE TABLE IF NOT EXISTS log_entry_projects (
+CREATE TABLE log_entry_projects (
             entry_id TEXT NOT NULL,
             project_id INTEGER NOT NULL,
 
@@ -67,8 +55,7 @@ pub fn run_migrations(conn: &Connection) -> Result<(), CliError> {
                 REFERENCES projects(id)
                 ON DELETE CASCADE
         );
-
-        CREATE TABLE IF NOT EXISTS log_entry_activity_types (
+CREATE TABLE log_entry_activity_types (
             entry_id TEXT NOT NULL,
             activity_type_id INTEGER NOT NULL,
 
@@ -82,32 +69,19 @@ pub fn run_migrations(conn: &Connection) -> Result<(), CliError> {
                 REFERENCES activity_types(id)
                 ON DELETE CASCADE
         );
-
-        CREATE INDEX IF NOT EXISTS idx_log_entries_task_key
+CREATE INDEX idx_log_entries_task_key
             ON log_entries(task_key);
-
-        CREATE INDEX IF NOT EXISTS idx_log_entries_start_time
+CREATE INDEX idx_log_entries_start_time
             ON log_entries(start_time);
-
-        CREATE INDEX IF NOT EXISTS idx_tags_name
+CREATE INDEX idx_tags_name
             ON tags(name);
-
-        CREATE INDEX IF NOT EXISTS idx_projects_name
+CREATE INDEX idx_projects_name
             ON projects(name);
-
-        CREATE INDEX IF NOT EXISTS idx_activity_types_name
+CREATE INDEX idx_activity_types_name
             ON activity_types(name);
-
-        CREATE INDEX IF NOT EXISTS idx_log_entry_tags_tag_id
+CREATE INDEX idx_log_entry_tags_tag_id
             ON log_entry_tags(tag_id);
-
-        CREATE INDEX IF NOT EXISTS idx_log_entry_projects_project_id
+CREATE INDEX idx_log_entry_projects_project_id
             ON log_entry_projects(project_id);
-
-        CREATE INDEX IF NOT EXISTS idx_log_entry_activity_types_activity_type_id
+CREATE INDEX idx_log_entry_activity_types_activity_type_id
             ON log_entry_activity_types(activity_type_id);
-        ",
-    )?;
-
-    Ok(())
-}

@@ -1,9 +1,6 @@
 use crate::{
-    db::{
-        entries::add_entry,
-        metadata::{list_projects, list_tags},
-        tasks::get_task_description,
-    },
+    cli::AddArgs,
+    db::{entries::add_entry, metadata::list_named_entities, tasks::get_task_description},
     errors::CliError,
     models::LogEntry,
     ui::prompts::{
@@ -11,63 +8,47 @@ use crate::{
     },
 };
 
-pub fn handle(
-    task_key: String,
-    message: Option<String>,
-    tags: Vec<String>,
-    projects: Vec<String>,
-    start_time: Option<u32>,
-    end_time: Option<u32>,
-) -> Result<(), CliError> {
-    let task_description = match get_task_description(&task_key)? {
+pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
+    let task_description = match get_task_description(&args.task_key)? {
         Some(desc) => desc,
-
-        None => prompt_for_task_description(&task_key)?,
+        None => prompt_for_task_description(&args.task_key)?,
     };
 
-    let message = match message {
-        Some(msg) => Some(msg),
+    if args.message.is_none() {
+        let input = prompt_for_message()?;
+        args.message = if input.is_empty() { None } else { Some(input) };
+    }
 
-        None => {
-            let input = prompt_for_message()?;
-
-            if input.is_empty() { None } else { Some(input) }
+    if !args.quick {
+        if args.tags.is_empty() {
+            args.tags =
+                prompt_for_multi_value("Tags (comma separated)", list_named_entities("tags")?)?;
         }
-    };
 
-    let tags = if tags.is_empty() {
-        prompt_for_multi_value("Tags (comma separated)", list_tags()?)?
-    } else {
-        tags
-    };
+        if args.projects.is_empty() {
+            args.projects = prompt_for_multi_value(
+                "Projects (comma separated)",
+                list_named_entities("projects")?,
+            )?;
+        }
 
-    let projects = if projects.is_empty() {
-        prompt_for_multi_value("Projects (comma separated)", list_projects()?)?
-    } else {
-        projects
-    };
+        if args.activity_types.is_empty() {
+            args.activity_types = prompt_for_multi_value(
+                "Activity Types (comma separated)",
+                list_named_entities("activity_types")?,
+            )?;
+        }
 
-    let start_time = match start_time {
-        Some(time) => Some(time),
+        if args.start.is_none() {
+            args.start = prompt_for_time("Start Time (HHMM)")?;
+        }
 
-        None => prompt_for_time("Start Time (HHMM)")?,
-    };
+        if args.end.is_none() {
+            args.end = prompt_for_time("End Time (HHMM)")?;
+        }
+    }
 
-    let end_time = match end_time {
-        Some(time) => Some(time),
-
-        None => prompt_for_time("End Time (HHMM)")?,
-    };
-
-    let entry = LogEntry::new(
-        task_key,
-        task_description,
-        message,
-        tags,
-        projects,
-        start_time,
-        end_time,
-    );
+    let entry = LogEntry::from_add_args(args, task_description);
 
     let entry_id = entry.id;
 

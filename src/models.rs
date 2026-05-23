@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use uuid::Uuid;
 
+use crate::cli::AddArgs;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogEntry {
     pub id: Uuid,
@@ -17,6 +19,7 @@ pub struct LogEntry {
 
     pub tags: Vec<String>,
     pub projects: Vec<String>,
+    pub activity_types: Vec<String>,
 
     pub start_time: Option<u32>,
     pub end_time: Option<u32>,
@@ -29,6 +32,7 @@ impl LogEntry {
         message: Option<String>,
         tags: Vec<String>,
         projects: Vec<String>,
+        activity_types: Vec<String>,
         start_time: Option<u32>,
         end_time: Option<u32>,
     ) -> Self {
@@ -47,14 +51,11 @@ impl LogEntry {
 
             tags,
             projects,
+            activity_types,
 
             start_time,
             end_time,
         }
-    }
-
-    pub fn touch(&mut self) {
-        self.updated_at = Local::now();
     }
 
     pub fn formatted_time(&self) -> String {
@@ -72,6 +73,29 @@ impl LogEntry {
             }
 
             (None, None) => String::new(),
+        }
+    }
+
+    pub fn from_add_args(args: AddArgs, task_description: String) -> Self {
+        let now = Local::now();
+
+        Self {
+            id: Uuid::new_v4(),
+
+            created_at: now,
+            updated_at: now,
+
+            task_key: args.task_key,
+            task_description,
+
+            message: args.message,
+
+            tags: args.tags,
+            projects: args.projects,
+            activity_types: args.activity_types,
+
+            start_time: args.start,
+            end_time: args.end,
         }
     }
 }

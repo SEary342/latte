@@ -1,35 +1,29 @@
 use crate::errors::CliError;
 
-use rusqlite::params;
+use rusqlite::Connection;
 
 use super::connection::get_connection;
 
-pub fn list_tags() -> Result<Vec<String>, CliError> {
+pub fn list_named_entities(table: &str) -> Result<Vec<String>, CliError> {
     let conn = get_connection()?;
 
-    let mut stmt = conn.prepare(
-        "
-        SELECT DISTINCT tag
-        FROM log_entry_tags
-        ORDER BY tag
-        ",
-    )?;
-
-    let rows = stmt.query_map([], |row| row.get(0))?;
-
-    Ok(rows.collect::<Result<Vec<String>, _>>()?)
+    list_named_entities_with_conn(&conn, table)
 }
 
-pub fn list_projects() -> Result<Vec<String>, CliError> {
-    let conn = get_connection()?;
-
-    let mut stmt = conn.prepare(
+pub fn list_named_entities_with_conn(
+    conn: &Connection,
+    table: &str,
+) -> Result<Vec<String>, CliError> {
+    let sql = format!(
         "
-        SELECT DISTINCT project
-        FROM log_entry_projects
-        ORDER BY project
+        SELECT name
+        FROM {}
+        ORDER BY name
         ",
-    )?;
+        table
+    );
+
+    let mut stmt = conn.prepare(&sql)?;
 
     let rows = stmt.query_map([], |row| row.get(0))?;
 

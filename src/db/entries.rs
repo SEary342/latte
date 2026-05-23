@@ -1,10 +1,14 @@
-use crate::{errors::CliError, models::LogEntry};
+use crate::{db::entities::get_or_create_named_entity, errors::CliError, models::LogEntry};
 
 use chrono::{DateTime, Local};
 use rusqlite::{Connection, params};
 use uuid::Uuid;
 
 use super::connection::get_connection;
+
+const TAGS_TABLE: &str = "tags";
+const PROJECTS_TABLE: &str = "projects";
+const ACTIVITY_TYPES_TABLE: &str = "activity_types";
 
 pub fn add_entry(entry: LogEntry) -> Result<(), CliError> {
     let LogEntry {
@@ -16,6 +20,7 @@ pub fn add_entry(entry: LogEntry) -> Result<(), CliError> {
         message,
         tags,
         projects,
+        activity_types,
         start_time,
         end_time,
     } = entry;
@@ -26,7 +31,7 @@ pub fn add_entry(entry: LogEntry) -> Result<(), CliError> {
 
     let tx = conn.transaction()?;
 
-    // Upsert task
+    // Insert task if missing
     tx.execute(
         "
         INSERT OR IGNORE INTO tasks (
@@ -63,31 +68,52 @@ pub fn add_entry(entry: LogEntry) -> Result<(), CliError> {
         ],
     )?;
 
-    // Insert tags
+    // Tags
     for tag in tags {
+        let tag_id = get_or_create_named_entity(&tx, TAGS_TABLE, &tag)?;
+
         tx.execute(
             "
             INSERT OR IGNORE INTO log_entry_tags (
                 entry_id,
-                tag
+                tag_id
             )
             VALUES (?1, ?2)
             ",
-            params![&entry_id, tag],
+            params![&entry_id, tag_id],
         )?;
     }
 
-    // Insert projects
+    // Projects
     for project in projects {
+        let project_id = get_or_create_named_entity(&tx, PROJECTS_TABLE, &project)?;
+
         tx.execute(
             "
             INSERT OR IGNORE INTO log_entry_projects (
                 entry_id,
-                project
+                project_id
             )
             VALUES (?1, ?2)
             ",
-            params![&entry_id, project],
+            params![&entry_id, project_id],
+        )?;
+    }
+
+    // Activity types
+    for activity_type in activity_types {
+        let activity_type_id =
+            get_or_create_named_entity(&tx, ACTIVITY_TYPES_TABLE, &activity_type)?;
+
+        tx.execute(
+            "
+            INSERT OR IGNORE INTO log_entry_activity_types (
+                entry_id,
+                activity_type_id
+            )
+            VALUES (?1, ?2)
+            ",
+            params![&entry_id, activity_type_id],
         )?;
     }
 
@@ -140,8 +166,10 @@ pub fn list_entries() -> Result<Vec<LogEntry>, CliError> {
 
         let updated_at = DateTime::parse_from_rfc3339(&updated_at)?.with_timezone(&Local);
 
-        let mut entry = LogEntry {
-            id: Uuid::parse_str(&id)?,
+        let entry_id = Uuid::parse_str(&id)?;
+
+        let entry = LogEntry {
+            id: entry_id,
 
             created_at,
             updated_at,
@@ -151,16 +179,13 @@ pub fn list_entries() -> Result<Vec<LogEntry>, CliError> {
 
             message,
 
-            tags: Vec::new(),
-            projects: Vec::new(),
+            tags: load_tags(&conn, &id)?,
+            projects: load_projects(&conn, &id)?,
+            activity_types: load_activity_types(&conn, &id)?,
 
             start_time,
             end_time,
         };
-
-        entry.tags = load_tags(&conn, &entry.id.to_string())?;
-
-        entry.projects = load_projects(&conn, &entry.id.to_string())?;
 
         entries.push(entry);
     }
@@ -171,10 +196,12 @@ pub fn list_entries() -> Result<Vec<LogEntry>, CliError> {
 fn load_tags(conn: &Connection, entry_id: &str) -> Result<Vec<String>, CliError> {
     let mut stmt = conn.prepare(
         "
-        SELECT tag
-        FROM log_entry_tags
-        WHERE entry_id = ?1
-        ORDER BY tag
+        SELECT t.name
+        FROM log_entry_tags let
+        JOIN tags t
+            ON let.tag_id = t.id
+        WHERE let.entry_id = ?1
+        ORDER BY t.name
         ",
     )?;
 
@@ -186,10 +213,29 @@ fn load_tags(conn: &Connection, entry_id: &str) -> Result<Vec<String>, CliError>
 fn load_projects(conn: &Connection, entry_id: &str) -> Result<Vec<String>, CliError> {
     let mut stmt = conn.prepare(
         "
-        SELECT project
-        FROM log_entry_projects
-        WHERE entry_id = ?1
-        ORDER BY project
+        SELECT p.name
+        FROM log_entry_projects lep
+        JOIN projects p
+            ON lep.project_id = p.id
+        WHERE lep.entry_id = ?1
+        ORDER BY p.name
+        ",
+    )?;
+
+    let rows = stmt.query_map(params![entry_id], |row| row.get(0))?;
+
+    Ok(rows.collect::<Result<Vec<String>, _>>()?)
+}
+
+fn load_activity_types(conn: &Connection, entry_id: &str) -> Result<Vec<String>, CliError> {
+    let mut stmt = conn.prepare(
+        "
+        SELECT at.name
+        FROM log_entry_activity_types leat
+        JOIN activity_types at
+            ON leat.activity_type_id = at.id
+        WHERE leat.entry_id = ?1
+        ORDER BY at.name
         ",
     )?;
 
