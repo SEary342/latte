@@ -21,6 +21,14 @@ struct MetadataRow {
     name: String,
 }
 
+#[derive(Tabled)]
+struct TaskRow {
+    #[tabled(rename = "Task Key")]
+    key: String,
+    #[tabled(rename = "Description")]
+    description: String,
+}
+
 pub fn render_log_table(entries: &[LogEntry]) {
     let rows: Vec<LogRow> = entries
         .iter()
@@ -69,5 +77,24 @@ pub fn render_metadata_table(title: &str, items: &[String]) {
 
     // Optional aesthetic touch: giving the table a title header styling
     println!("\n=== All {} ===", title);
+    println!("{}", table);
+}
+
+pub fn render_tasks_table(tasks: &[(String, String)]) {
+    if tasks.is_empty() {
+        println!("No tasks found.");
+        return;
+    }
+
+    let rows: Vec<TaskRow> = tasks
+        .iter()
+        .map(|(key, desc)| TaskRow {
+            key: key.clone(),
+            description: desc.clone(),
+        })
+        .collect();
+
+    let table = Table::new(rows);
+    println!("\n=== All Tasks ===");
     println!("{}", table);
 }

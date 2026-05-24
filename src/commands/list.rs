@@ -1,9 +1,9 @@
 use crate::{
     cli::{ListArgs, SearchArgs},
     commands::search,
-    db::metadata::{list_entities_by_column, list_named_entities},
+    db::metadata::{list_named_entities, list_tasks_with_descriptions},
     errors::CliError,
-    ui::tables::render_metadata_table,
+    ui::tables::{render_metadata_table, render_tasks_table},
 };
 
 pub fn handle(args: ListArgs) -> Result<(), CliError> {
@@ -17,13 +17,16 @@ pub fn handle(args: ListArgs) -> Result<(), CliError> {
         let activities = list_named_entities("activity_types")?;
         render_metadata_table("Activity Types", &activities);
     } else if args.task {
-        let tasks = list_entities_by_column("tasks", "task_key")?;
-        render_metadata_table("Tasks", &tasks);
+        let tasks = list_tasks_with_descriptions()?;
+        render_tasks_table(&tasks);
     } else {
         let mut search_args = SearchArgs::default();
 
         if args.today {
+            println!("== Today's Logs ==");
             search_args.today = true;
+        } else {
+            println!("== All Logs ==");
         }
 
         search::handle(search_args)?;
