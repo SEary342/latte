@@ -148,6 +148,10 @@ pub struct SummaryArgs {
     /// End date for range (YYYY-MM-DD)
     #[arg(long)]
     pub end_date: Option<String>,
+
+    /// JSON Output
+    #[arg(short, long)]
+    pub json: bool,
 }
 
 #[derive(Debug, ClapArgs)]

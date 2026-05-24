@@ -40,13 +40,10 @@ fn run(args: Args) -> Result<(), CliError> {
         Commands::Edit(_args) => {
             // TODO
         }
-        Commands::Summary(_args) => {
-            // TODO
-        }
+        Commands::Summary(args) => commands::summary::handle(args)?,
         Commands::Path => {
             println!("{}", config::show_paths()?);
         }
-
         Commands::Cleanup(args) => commands::cleanup::handle(args)?,
     }
 
