@@ -17,3 +17,14 @@ pub fn get_task_description(task_key: &str) -> Result<Option<String>, CliError> 
         Ok(None)
     }
 }
+
+/// Update the description of an existing task.
+/// Returns `true` if a row was updated, `false` if the task key wasn't found.
+pub fn update_task_description(task_key: &str, new_description: &str) -> Result<bool, CliError> {
+    let conn = get_connection()?;
+    let rows = conn.execute(
+        "UPDATE tasks SET description = ?1 WHERE task_key = ?2",
+        params![new_description, task_key],
+    )?;
+    Ok(rows > 0)
+}

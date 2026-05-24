@@ -111,8 +111,52 @@ pub struct SearchArgs {
 
 #[derive(Debug, ClapArgs)]
 pub struct EditArgs {
-    /// The unique ID of the log entry
-    pub id: usize,
+    /// Short UUID prefix (first 8 chars) of the log entry to edit.
+    /// Leave blank to use --tag / --project / --activity for global entity edits.
+    #[arg(index = 1)]
+    pub id: Option<String>,
+
+    // ── Log-entry field overrides (used together with `id`) ────────────────
+    /// New message / work description
+    #[arg(short, long)]
+    pub message: Option<String>,
+
+    /// Replace tags on the entry (comma-separated)
+    #[arg(long = "tags", value_delimiter = ',')]
+    pub entry_tags: Vec<String>,
+
+    /// Replace projects on the entry (comma-separated)
+    #[arg(long = "projects", value_delimiter = ',')]
+    pub entry_projects: Vec<String>,
+
+    /// Replace activity types on the entry (comma-separated)
+    #[arg(long = "activities", value_delimiter = ',')]
+    pub entry_activities: Vec<String>,
+
+    /// New start time (HHMM)
+    #[arg(short, long)]
+    pub start: Option<u32>,
+
+    /// New end time (HHMM)
+    #[arg(short, long)]
+    pub end: Option<u32>,
+
+    // ── Global entity rename flows (mutually exclusive with `id`) ──────────
+    /// Rename a global tag (prompts for new name)
+    #[arg(long, conflicts_with = "id")]
+    pub tag: Option<String>,
+
+    /// Rename a global project (prompts for new name)
+    #[arg(long, conflicts_with = "id")]
+    pub project: Option<String>,
+
+    /// Rename a global activity type (prompts for new name)
+    #[arg(long, conflicts_with = "id")]
+    pub activity: Option<String>,
+
+    /// Edit a task description (prompts for new description)
+    #[arg(long, conflicts_with = "id")]
+    pub task: Option<String>,
 }
 
 #[derive(Debug, ClapArgs)]

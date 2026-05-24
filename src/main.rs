@@ -37,9 +37,7 @@ fn run(args: Args) -> Result<(), CliError> {
         Commands::Add(args) => commands::add::handle(args)?,
         Commands::List(args) => commands::list::handle(args)?,
         Commands::Search(args) => commands::search::handle(args)?,
-        Commands::Edit(_args) => {
-            // TODO
-        }
+        Commands::Edit(args) => commands::edit::handle(args)?,
         Commands::Summary(args) => commands::summary::handle(args)?,
         Commands::Path => {
             println!("{}", config::show_paths()?);

@@ -41,7 +41,7 @@ pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
     print_header(&task_key_str, &task_description);
 
     if args.message.is_none() {
-        let input = prompt_for_message()?;
+        let input = prompt_for_message(None)?;
         args.message = if input.is_empty() { None } else { Some(input) };
     }
 
@@ -50,7 +50,7 @@ pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
             args.tags = prompt_for_multi_value(
                 "Tags (comma separated)",
                 list_named_entities("tags")?,
-                true,
+                &[],
             )?;
         }
 
@@ -58,7 +58,7 @@ pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
             args.projects = prompt_for_multi_value(
                 "Projects (comma separated)",
                 list_named_entities("projects")?,
-                true,
+                &[],
             )?;
         }
 
@@ -66,16 +66,16 @@ pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
             args.activity_types = prompt_for_multi_value(
                 "Activity Types (comma separated)",
                 list_named_entities("activity_types")?,
-                true,
+                &[],
             )?;
         }
 
         if args.start.is_none() {
-            args.start = prompt_for_time("Start Time (HHMM)")?;
+            args.start = prompt_for_time("Start Time (HHMM)", None)?;
         }
 
         if args.end.is_none() {
-            args.end = prompt_for_time("End Time (HHMM)")?;
+            args.end = prompt_for_time("End Time (HHMM)", None)?;
         }
     }
 

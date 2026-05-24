@@ -329,3 +329,93 @@ pub fn list_entries(filter: &EntryFilter) -> Result<Vec<LogEntry>, CliError> {
 
     Ok(entries)
 }
+
+/// Look up a single log entry whose UUID starts with `prefix` (case-insensitive).
+/// Returns `None` if no match is found, or an error if more than one entry matches.
+pub fn get_entry_by_prefix(prefix: &str) -> Result<Option<LogEntry>, CliError> {
+    let filter = EntryFilter::default();
+    let all = list_entries(&filter)?;
+
+    let prefix_lower = prefix.to_lowercase();
+    let matches: Vec<LogEntry> = all
+        .into_iter()
+        .filter(|e| e.id.to_string().to_lowercase().starts_with(&prefix_lower))
+        .collect();
+
+    match matches.len() {
+        0 => Ok(None),
+        1 => Ok(Some(matches.into_iter().next().unwrap())),
+        _ => Err(CliError::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!(
+                "Ambiguous prefix '{}': matches {} entries",
+                prefix,
+                matches.len()
+            ),
+        ))),
+    }
+}
+
+/// Update the scalar fields of a log entry (message, start_time, end_time) and
+/// replace its tag / project / activity-type relations.
+pub fn update_entry(
+    entry_id: Uuid,
+    message: Option<String>,
+    start_time: Option<u32>,
+    end_time: Option<u32>,
+    tags: Vec<String>,
+    projects: Vec<String>,
+    activity_types: Vec<String>,
+) -> Result<(), CliError> {
+    let entry_id_str = entry_id.to_string();
+    let mut conn = get_connection()?;
+    let tx = conn.transaction()?;
+
+    // Update scalar fields
+    tx.execute(
+        "UPDATE log_entries SET message = ?1, start_time = ?2, end_time = ?3 WHERE id = ?4",
+        params![message, start_time, end_time, &entry_id_str],
+    )?;
+
+    // Replace tag relations
+    tx.execute(
+        "DELETE FROM log_entry_tags WHERE entry_id = ?1",
+        params![&entry_id_str],
+    )?;
+    for tag in &tags {
+        let tag_id = get_or_create_named_entity(&tx, TAGS_TABLE, tag)?;
+        tx.execute(
+            "INSERT OR IGNORE INTO log_entry_tags (entry_id, tag_id) VALUES (?1, ?2)",
+            params![&entry_id_str, tag_id],
+        )?;
+    }
+
+    // Replace project relations
+    tx.execute(
+        "DELETE FROM log_entry_projects WHERE entry_id = ?1",
+        params![&entry_id_str],
+    )?;
+    for project in &projects {
+        let project_id = get_or_create_named_entity(&tx, PROJECTS_TABLE, project)?;
+        tx.execute(
+            "INSERT OR IGNORE INTO log_entry_projects (entry_id, project_id) VALUES (?1, ?2)",
+            params![&entry_id_str, project_id],
+        )?;
+    }
+
+    // Replace activity-type relations
+    tx.execute(
+        "DELETE FROM log_entry_activity_types WHERE entry_id = ?1",
+        params![&entry_id_str],
+    )?;
+    for activity_type in &activity_types {
+        let at_id = get_or_create_named_entity(&tx, ACTIVITY_TYPES_TABLE, activity_type)?;
+        tx.execute(
+            "INSERT OR IGNORE INTO log_entry_activity_types (entry_id, activity_type_id) VALUES (?1, ?2)",
+            params![&entry_id_str, at_id],
+        )?;
+    }
+
+    tx.commit()?;
+    Ok(())
+}
