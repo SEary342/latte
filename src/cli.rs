@@ -74,7 +74,7 @@ pub struct AddArgs {
     pub quick: bool,
 }
 
-#[derive(Debug, ClapArgs)]
+#[derive(Debug, ClapArgs, Default)]
 pub struct SearchArgs {
     #[arg(short, long)]
     pub tag: Option<String>,
@@ -84,6 +84,9 @@ pub struct SearchArgs {
 
     #[arg(short, long)]
     pub key: Option<String>,
+
+    #[arg(short, long)]
+    pub activity: Option<String>,
 }
 
 #[derive(Debug, ClapArgs)]

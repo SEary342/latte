@@ -7,12 +7,22 @@ const SPLASH_LOGO: &str = r#"
 |:  |        /' /\  \  \\_ /        \\_ /    \/    |   
  \  |___    //  __'  \ |.  |        |.  |    // ___)_  
 ( \_|:  \  /   /  \\  \\:  |        \:  |   (:      "| 
- \_______)(___/    \___)\__|         \__|    \_______) 
-                                                       
+ \_______)(___/    \___)\__|         \__|    \_______)                                                   
 "#;
 
-pub fn print_logo() {
-    println!("{}", SPLASH_LOGO.truecolor(200, 150, 100));
+const SMALL_LOGO: &str = r#"
+  _         _   _       
+ | |   __ _| |_| |_ ___ 
+ | |__/ _` |  _|  _/ -_)
+ |____\__,_|\__|\__\___|        
+"#;
+
+pub fn print_logo(large: bool) {
+    if large {
+        println!("{}", SPLASH_LOGO.truecolor(200, 150, 100));
+    } else {
+        println!("{}", SMALL_LOGO.truecolor(200, 150, 100));
+    }
 
     let subtitle = "Logging And Task Tracking Engine";
     let separator = "─".repeat(45);

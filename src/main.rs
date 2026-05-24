@@ -15,10 +15,15 @@ use crate::{
 };
 
 fn main() -> Result<(), CliError> {
-    let _guard = TerminalGuard::new();
-    clear_screen()?;
-    print_logo();
     let args = Args::parse();
+
+    let is_interactive = matches!(
+        args.command,
+        Commands::Add(_) | Commands::Edit(_) | Commands::Cleanup(_)
+    );
+    let _guard = TerminalGuard::new(is_interactive);
+    clear_screen()?;
+    print_logo(is_interactive);
 
     if let Err(e) = run(args) {
         eprintln!("Error: {}", e);
@@ -30,23 +35,14 @@ fn main() -> Result<(), CliError> {
 fn run(args: Args) -> Result<(), CliError> {
     match args.command {
         Commands::Add(args) => commands::add::handle(args)?,
-
-        Commands::List => {
-            commands::list::handle()?;
-        }
-
-        Commands::Search(_args) => {
-            // TODO
-        }
-
+        Commands::List => commands::list::handle()?,
+        Commands::Search(args) => commands::search::handle(args)?,
         Commands::Edit(_args) => {
             // TODO
         }
-
         Commands::Summary(_args) => {
             // TODO
         }
-
         Commands::Path => {
             println!("{}", config::show_paths()?);
         }
