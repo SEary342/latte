@@ -1,8 +1,7 @@
-use crate::errors::CliError;
+use crate::{errors::CliError, ui::fuzzy::ListCompleter};
 
 use dialoguer::Input;
-
-use super::completion::VecCompletion;
+use inquire::Text;
 
 pub fn prompt_for_message() -> Result<String, CliError> {
     let input = Input::<String>::new()
@@ -16,7 +15,7 @@ pub fn prompt_for_message() -> Result<String, CliError> {
 pub fn prompt_for_task_description(task_key: &str) -> Result<String, CliError> {
     let input = Input::<String>::new()
         .with_prompt(format!(
-            "New task key '{}' detected. Enter description",
+            "New task key '{}' detected.\nEnter task description",
             task_key
         ))
         .allow_empty(true)
@@ -25,25 +24,48 @@ pub fn prompt_for_task_description(task_key: &str) -> Result<String, CliError> {
     Ok(input.trim().to_string())
 }
 
-pub fn prompt_for_multi_value(prompt: &str, options: Vec<String>) -> Result<Vec<String>, CliError> {
-    let completion = VecCompletion { items: options };
+pub fn prompt_for_multi_value(
+    prompt: &str,
+    options: Vec<String>,
+    _allow_empty: bool,
+) -> Result<Vec<String>, CliError> {
+    let completer = ListCompleter { options };
 
-    let input = Input::<String>::new()
-        .with_prompt(prompt)
-        .allow_empty(true)
-        .completion_with(&completion)
-        .interact_text()?;
+    let input = Text::new(prompt).with_autocomplete(completer).prompt()?;
 
-    Ok(parse_csv_input(&input))
+    // Split the final string into a Vec
+    let result = input
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    Ok(result)
 }
 
-fn parse_csv_input(input: &str) -> Vec<String> {
-    input
-        .split(',')
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(ToOwned::to_owned)
-        .collect()
+pub fn prompt_for_value(
+    prompt: &str,
+    options: Vec<String>,
+    allow_empty: bool,
+) -> Result<String, CliError> {
+    let mut text_prompt = Text::new(prompt);
+
+    // Apply autocomplete ONLY if we have options
+    if !options.is_empty() {
+        text_prompt = text_prompt.with_autocomplete(ListCompleter { options });
+    }
+
+    let input = text_prompt.prompt()?;
+
+    // Unified Validation
+    if !allow_empty && input.trim().is_empty() {
+        return Err(CliError::from(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Input cannot be empty",
+        )));
+    }
+
+    Ok(input)
 }
 
 pub fn prompt_for_time(prompt: &str) -> Result<Option<u32>, CliError> {

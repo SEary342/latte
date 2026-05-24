@@ -11,15 +11,20 @@ mod ui;
 use crate::{
     cli::{Args, Commands},
     errors::CliError,
+    ui::{guard::TerminalGuard, header::print_logo, util::clear_screen},
 };
 
-fn main() {
+fn main() -> Result<(), CliError> {
+    let _guard = TerminalGuard::new();
+    clear_screen()?;
+    print_logo();
     let args = Args::parse();
 
     if let Err(e) = run(args) {
         eprintln!("Error: {}", e);
-        std::process::exit(1);
+        return Err(e);
     }
+    Ok(())
 }
 
 fn run(args: Args) -> Result<(), CliError> {

@@ -1,26 +1,24 @@
+use super::connection::get_connection;
 use crate::errors::CliError;
-
 use rusqlite::Connection;
 
-use super::connection::get_connection;
-
-pub fn list_named_entities(table: &str) -> Result<Vec<String>, CliError> {
+pub fn list_entities_by_column(table: &str, column: &str) -> Result<Vec<String>, CliError> {
     let conn = get_connection()?;
-
-    list_named_entities_with_conn(&conn, table)
+    list_entities_by_column_with_conn(&conn, table, column)
 }
 
-pub fn list_named_entities_with_conn(
+pub fn list_entities_by_column_with_conn(
     conn: &Connection,
     table: &str,
+    column: &str,
 ) -> Result<Vec<String>, CliError> {
     let sql = format!(
         "
-        SELECT name
+        SELECT {}
         FROM {}
-        ORDER BY name
+        ORDER BY {}
         ",
-        table
+        column, table, column
     );
 
     let mut stmt = conn.prepare(&sql)?;
@@ -28,4 +26,8 @@ pub fn list_named_entities_with_conn(
     let rows = stmt.query_map([], |row| row.get(0))?;
 
     Ok(rows.collect::<Result<Vec<String>, _>>()?)
+}
+
+pub fn list_named_entities(table: &str) -> Result<Vec<String>, CliError> {
+    list_entities_by_column(table, "name")
 }

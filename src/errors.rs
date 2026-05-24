@@ -26,6 +26,6 @@ pub enum CliError {
     #[error("Could not determine home/config directory")]
     MissingHomeDir,
 
-    #[error("{0}")]
-    Message(String),
+    #[error("Prompt error: {0}")]
+    Inquire(#[from] inquire::InquireError),
 }

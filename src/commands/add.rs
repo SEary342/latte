@@ -1,18 +1,44 @@
 use crate::{
     cli::AddArgs,
-    db::{entries::add_entry, metadata::list_named_entities, tasks::get_task_description},
+    db::{
+        entries::add_entry,
+        metadata::{list_entities_by_column, list_named_entities},
+        tasks::get_task_description,
+    },
     errors::CliError,
     models::LogEntry,
-    ui::prompts::{
-        prompt_for_message, prompt_for_multi_value, prompt_for_task_description, prompt_for_time,
+    ui::{
+        header::print_header,
+        prompts::{
+            prompt_for_message, prompt_for_multi_value, prompt_for_task_description,
+            prompt_for_time, prompt_for_value,
+        },
+        util::clear_screen,
     },
 };
 
 pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
-    let task_description = match get_task_description(&args.task_key)? {
+    println!("Add New Log\n");
+    let mut task_key_str = args.task_key.clone().unwrap_or_default();
+    if args.task_key.is_none() {
+        let input = prompt_for_value(
+            "Task Key",
+            list_entities_by_column("tasks", "task_key")?,
+            false,
+        )?;
+        task_key_str = input;
+    }
+
+    let task_description = match get_task_description(&task_key_str)? {
         Some(desc) => desc,
-        None => prompt_for_task_description(&args.task_key)?,
+        None => {
+            print_header(&task_key_str, "New Task"); // Placeholder description
+            prompt_for_task_description(&task_key_str)?
+        }
     };
+
+    // Helper closure to show header consistently
+    print_header(&task_key_str, &task_description);
 
     if args.message.is_none() {
         let input = prompt_for_message()?;
@@ -21,14 +47,18 @@ pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
 
     if !args.quick {
         if args.tags.is_empty() {
-            args.tags =
-                prompt_for_multi_value("Tags (comma separated)", list_named_entities("tags")?)?;
+            args.tags = prompt_for_multi_value(
+                "Tags (comma separated)",
+                list_named_entities("tags")?,
+                true,
+            )?;
         }
 
         if args.projects.is_empty() {
             args.projects = prompt_for_multi_value(
                 "Projects (comma separated)",
                 list_named_entities("projects")?,
+                true,
             )?;
         }
 
@@ -36,6 +66,7 @@ pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
             args.activity_types = prompt_for_multi_value(
                 "Activity Types (comma separated)",
                 list_named_entities("activity_types")?,
+                true,
             )?;
         }
 
@@ -48,8 +79,9 @@ pub fn handle(mut args: AddArgs) -> Result<(), CliError> {
         }
     }
 
-    let entry = LogEntry::from_add_args(args, task_description);
+    clear_screen()?;
 
+    let entry = LogEntry::from_add_args(args, task_key_str, task_description);
     let entry_id = entry.id;
 
     add_entry(entry)?;

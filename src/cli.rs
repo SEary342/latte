@@ -42,7 +42,8 @@ pub enum Commands {
 #[derive(Debug, ClapArgs)]
 pub struct AddArgs {
     /// Task Key (e.g., JIRA-123)
-    pub task_key: String,
+    #[arg(index = 1)]
+    pub task_key: Option<String>,
 
     /// Description of the work done
     #[arg(short, long)]

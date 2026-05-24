@@ -26,38 +26,6 @@ pub struct LogEntry {
 }
 
 impl LogEntry {
-    pub fn new(
-        task_key: String,
-        task_description: String,
-        message: Option<String>,
-        tags: Vec<String>,
-        projects: Vec<String>,
-        activity_types: Vec<String>,
-        start_time: Option<u32>,
-        end_time: Option<u32>,
-    ) -> Self {
-        let now = Local::now();
-
-        Self {
-            id: Uuid::new_v4(),
-
-            created_at: now,
-            updated_at: now,
-
-            task_key,
-            task_description,
-
-            message,
-
-            tags,
-            projects,
-            activity_types,
-
-            start_time,
-            end_time,
-        }
-    }
-
     pub fn formatted_time(&self) -> String {
         match (self.start_time, self.end_time) {
             (Some(start), Some(end)) => {
@@ -76,7 +44,7 @@ impl LogEntry {
         }
     }
 
-    pub fn from_add_args(args: AddArgs, task_description: String) -> Self {
+    pub fn from_add_args(args: AddArgs, task_key: String, task_description: String) -> Self {
         let now = Local::now();
 
         Self {
@@ -85,7 +53,7 @@ impl LogEntry {
             created_at: now,
             updated_at: now,
 
-            task_key: args.task_key,
+            task_key: task_key,
             task_description,
 
             message: args.message,
