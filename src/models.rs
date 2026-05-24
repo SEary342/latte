@@ -10,7 +10,7 @@ pub struct LogEntry {
     pub id: Uuid,
 
     pub created_at: DateTime<Local>,
-    pub updated_at: DateTime<Local>,
+    pub log_date: DateTime<Local>,
 
     pub task_key: String,
     pub task_description: String,
@@ -51,7 +51,7 @@ impl LogEntry {
             id: Uuid::new_v4(),
 
             created_at: now,
-            updated_at: now,
+            log_date: now,
 
             task_key: task_key,
             task_description,

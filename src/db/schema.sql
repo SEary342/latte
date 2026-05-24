@@ -5,7 +5,7 @@ CREATE TABLE tasks (
 CREATE TABLE log_entries (
             id TEXT PRIMARY KEY,
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
+            log_date TEXT NOT NULL,
             task_key TEXT NOT NULL,
             message TEXT,
             start_time INTEGER,

@@ -13,7 +13,7 @@ pub fn run_migrations(conn: &Connection) -> Result<(), CliError> {
         CREATE TABLE IF NOT EXISTS log_entries (
             id TEXT PRIMARY KEY,
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
+            log_date TEXT NOT NULL,
             task_key TEXT NOT NULL,
             message TEXT,
             start_time INTEGER,

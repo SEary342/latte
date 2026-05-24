@@ -35,7 +35,7 @@ fn main() -> Result<(), CliError> {
 fn run(args: Args) -> Result<(), CliError> {
     match args.command {
         Commands::Add(args) => commands::add::handle(args)?,
-        Commands::List => commands::list::handle()?,
+        Commands::List(args) => commands::list::handle(args)?,
         Commands::Search(args) => commands::search::handle(args)?,
         Commands::Edit(_args) => {
             // TODO

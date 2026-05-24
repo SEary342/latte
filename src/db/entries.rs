@@ -14,7 +14,7 @@ pub fn add_entry(entry: LogEntry) -> Result<(), CliError> {
     let LogEntry {
         id,
         created_at,
-        updated_at,
+        log_date,
         task_key,
         task_description,
         message,
@@ -49,7 +49,7 @@ pub fn add_entry(entry: LogEntry) -> Result<(), CliError> {
         INSERT INTO log_entries (
             id,
             created_at,
-            updated_at,
+            log_date,
             task_key,
             message,
             start_time,
@@ -60,7 +60,7 @@ pub fn add_entry(entry: LogEntry) -> Result<(), CliError> {
         params![
             &entry_id,
             created_at.to_rfc3339(),
-            updated_at.to_rfc3339(),
+            log_date.to_rfc3339(),
             task_key,
             message,
             start_time,
@@ -130,6 +130,8 @@ pub struct EntryFilter<'a> {
     pub activity_type: Option<&'a str>,
     pub start_time_gte: Option<u32>,
     pub end_time_lte: Option<u32>,
+    pub start_date: Option<&'a str>,
+    pub end_date: Option<&'a str>,
 }
 
 // --- DRY Helpers for SQL Generation ---
@@ -177,7 +179,7 @@ pub fn list_entries(filter: &EntryFilter) -> Result<Vec<LogEntry>, CliError> {
     let mut query = format!(
         "
         SELECT
-            le.id, le.created_at, le.updated_at, le.task_key,
+            le.id, le.created_at, le.log_date, le.task_key,
             t.description, le.message, le.start_time, le.end_time,
             {} AS tags_csv,
             {} AS projects_csv,
@@ -200,6 +202,15 @@ pub fn list_entries(filter: &EntryFilter) -> Result<Vec<LogEntry>, CliError> {
     if let Some(ref tk) = filter.task_key {
         query.push_str(" AND le.task_key = ?");
         params.push(tk);
+    }
+    if let Some(ref sd) = filter.start_date {
+        // strftime returns 'YYYY-MM-DD' from the RFC3339 string
+        query.push_str(" AND strftime('%Y-%m-%d', le.log_date) >= ?");
+        params.push(sd);
+    }
+    if let Some(ref ed) = filter.end_date {
+        query.push_str(" AND strftime('%Y-%m-%d', le.log_date) <= ?");
+        params.push(ed);
     }
     if let Some(ref st) = filter.start_time_gte {
         query.push_str(" AND le.start_time >= ?");
@@ -244,7 +255,7 @@ pub fn list_entries(filter: &EntryFilter) -> Result<Vec<LogEntry>, CliError> {
         // type based on the variable type declarations here.
         let id: String = row.get("id")?;
         let created_at: String = row.get("created_at")?;
-        let updated_at: String = row.get("updated_at")?;
+        let log_date: String = row.get("log_date")?;
         let task_key: String = row.get("task_key")?;
         let task_description: String = row.get("description")?;
 
@@ -261,7 +272,7 @@ pub fn list_entries(filter: &EntryFilter) -> Result<Vec<LogEntry>, CliError> {
         Ok((
             id,
             created_at,
-            updated_at,
+            log_date,
             task_key,
             task_description,
             message,
@@ -288,7 +299,7 @@ pub fn list_entries(filter: &EntryFilter) -> Result<Vec<LogEntry>, CliError> {
         let (
             id,
             created_at,
-            updated_at,
+            log_date,
             task_key,
             task_description,
             message,
@@ -302,7 +313,7 @@ pub fn list_entries(filter: &EntryFilter) -> Result<Vec<LogEntry>, CliError> {
         entries.push(LogEntry {
             id: Uuid::parse_str(&id)?,
             created_at: DateTime::parse_from_rfc3339(&created_at)?.with_timezone(&Local),
-            updated_at: DateTime::parse_from_rfc3339(&updated_at)?.with_timezone(&Local),
+            log_date: DateTime::parse_from_rfc3339(&log_date)?.with_timezone(&Local),
             task_key,
             task_description,
             message,
