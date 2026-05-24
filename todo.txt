@@ -1,3 +1,2 @@
-[ ] finish the other commands
-[ ] Add a reminder system with due dates (stretch) - might legit require going to a SQLite db
+[ ] Add testing
 [ ] Add github ci/cd publishing
